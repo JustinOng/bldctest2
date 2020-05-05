@@ -64,8 +64,8 @@ static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_TIM1_Init(void);
-static void MX_USART1_UART_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 uint16_t enc_spi_tx = 0xFFFF;
 uint16_t enc_spi_rx = 0;
@@ -115,8 +115,8 @@ int main(void)
   MX_ADC1_Init();
   MX_SPI1_Init();
   MX_TIM1_Init();
-  MX_USART1_UART_Init();
   MX_TIM3_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   //const char msg[] = "hello!";
 
@@ -311,9 +311,9 @@ static void MX_TIM1_Init(void)
   htim1.Instance = TIM1;
   htim1.Init.Prescaler = 0;
   htim1.Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED2;
-  htim1.Init.Period = 2048;
+  htim1.Init.Period = 1024;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim1.Init.RepetitionCounter = 8;
+  htim1.Init.RepetitionCounter = 3;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
   {
@@ -439,7 +439,7 @@ static void MX_USART1_UART_Init(void)
   huart1.Init.Mode = UART_MODE_TX_RX;
   huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-  if (HAL_UART_Init(&huart1) != HAL_OK)
+  if (HAL_HalfDuplex_Init(&huart1) != HAL_OK)
   {
     Error_Handler();
   }
@@ -486,7 +486,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, PHASE_EN_3_Pin|PHASE_EN_2_Pin|PHASE_EN_1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, PHASE_EN_3_Pin|PHASE_EN_2_Pin|PHASE_EN_1_Pin|SIGNAL_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(nSLEEP_GPIO_Port, nSLEEP_Pin, GPIO_PIN_RESET);
@@ -498,8 +498,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PHASE_EN_3_Pin PHASE_EN_2_Pin PHASE_EN_1_Pin */
-  GPIO_InitStruct.Pin = PHASE_EN_3_Pin|PHASE_EN_2_Pin|PHASE_EN_1_Pin;
+  /*Configure GPIO pins : PHASE_EN_3_Pin PHASE_EN_2_Pin PHASE_EN_1_Pin SIGNAL_Pin */
+  GPIO_InitStruct.Pin = PHASE_EN_3_Pin|PHASE_EN_2_Pin|PHASE_EN_1_Pin|SIGNAL_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

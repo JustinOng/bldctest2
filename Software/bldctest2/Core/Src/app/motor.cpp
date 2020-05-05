@@ -40,7 +40,7 @@ void Motor::loop(void) {
 
 	for(uint8_t i = 0; i < 3; i++) {
 		uint16_t offset = electrical_angle + (120 * i);
-		uint16_t power = get_sinLUT(offset) * 8;
+		uint16_t power = get_sinLUT(offset) * 4;
 
 		if (i == 0) {
 			htim->Instance->CCR1 = power;
@@ -57,6 +57,8 @@ void Motor::loop(void) {
 	if (electrical_angle >= len_sinLUT) {
 		electrical_angle = 0;
 	}
+
+	SIGNAL_GPIO_Port->ODR ^= SIGNAL_Pin;
 
 //	convert_current();
 //	HAL_ADC_Start_DMA(&hadc1, (uint32_t *) adc_readings, 3);
