@@ -23,13 +23,8 @@ void main_cpp(void) {
 		} else {
 			motor.enable();
 		}
-	}
-	/*GPIO_PinState st = HAL_GPIO_ReadPin(BTN_GPIO_Port, BTN_Pin);
-	HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, st);
 
-	if (st) {
-	  __HAL_TIM_SET_COMPARE(&htim1, PH_2_CHANNEL, 0000);
-	} else {
-	  __HAL_TIM_SET_COMPARE(&htim1, PH_2_CHANNEL, 8000);
-	}*/
+//		HAL_ADC_Start(&hadc2);
+//		HAL_ADCEx_MultiModeStart_DMA(&hadc1, &adc_data, 1);
+	}
 }

@@ -88,11 +88,10 @@ void Error_Handler(void);
 #define nFault_GPIO_Port GPIOA
 #define BTN_Pin GPIO_PIN_15
 #define BTN_GPIO_Port GPIOA
-#define SIGNAL_Pin GPIO_PIN_7
-#define SIGNAL_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 extern ADC_HandleTypeDef hadc1;
+extern ADC_HandleTypeDef hadc2;
 extern DMA_HandleTypeDef hdma_adc1;
 
 extern SPI_HandleTypeDef hspi1;

@@ -58,8 +58,6 @@ void Motor::loop(void) {
 		electrical_angle = 0;
 	}
 
-	SIGNAL_GPIO_Port->ODR ^= SIGNAL_Pin;
-
 //	convert_current();
 //	HAL_ADC_Start_DMA(&hadc1, (uint32_t *) adc_readings, 3);
 //
