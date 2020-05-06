@@ -34,6 +34,7 @@ class Motor {
 		uint16_t pin_sleep;
 
 		float current[3] = {0};
+		uint16_t pos = 0;
 
 		static float current_from_adc(uint16_t adc) {
 			// formula from page 11, figure 2 of the mp6540 datasheet

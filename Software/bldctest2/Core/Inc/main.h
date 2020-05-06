@@ -68,6 +68,8 @@ void Error_Handler(void);
 #define PHASE_CS_2_GPIO_Port GPIOA
 #define PHASE_CS_1_Pin GPIO_PIN_3
 #define PHASE_CS_1_GPIO_Port GPIOA
+#define SPI1_CS_Pin GPIO_PIN_4
+#define SPI1_CS_GPIO_Port GPIOA
 #define BATT_SENSE_Pin GPIO_PIN_1
 #define BATT_SENSE_GPIO_Port GPIOB
 #define PHASE_EN_3_Pin GPIO_PIN_13

@@ -34,9 +34,17 @@ void Motor::setup(TIM_HandleTypeDef *_htim, GPIO_TypeDef *_pin_sleep_port, uint1
 }
 
 char tx_data[] = "AAAABB\r\n";
+uint16_t enc_spi_tx = 0xFFFF;
+uint16_t enc_spi_rx = 0;
 
 void Motor::loop(void) {
 	static uint16_t electrical_angle = 0;
+
+	pos = enc_spi_rx & 0x3FFF;
+
+	__HAL_SPI_ENABLE(&hspi1);
+	SPI1_CS_GPIO_Port->ODR &= ~SPI1_CS_Pin;
+	HAL_SPI_TransmitReceive_IT(&hspi1, (uint8_t *) &enc_spi_tx, (uint8_t *) &enc_spi_rx, 1);
 
 	for(uint8_t i = 0; i < 3; i++) {
 		uint16_t offset = electrical_angle + (120 * i);
