@@ -6,7 +6,7 @@ PERIOD = 256
 AMPLITUDE = 127
 
 x = np.arange(0, STEPS)
-func = lambda x, offset: np.floor((np.sin((2*np.pi *x/PERIOD) + offset) * AMPLITUDE))
+func = lambda x, offset: np.floor((np.sin((2*np.pi *x/PERIOD) + np.pi + offset) * AMPLITUDE))
 y1 = func(x, 0)
 y2 = func(x, 2/3*np.pi)
 y3 = func(x, 4/3*np.pi)
