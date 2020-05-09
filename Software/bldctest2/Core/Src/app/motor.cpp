@@ -103,23 +103,23 @@ void Motor::loop_calibrate(void) {
 		return;
 	}
 
+	uint16_t electrical_angle = count / CALIBRATION_DELAY;
+
+	// detect extreme delta as encoder wrap around
+	if (delta > (ENCODER_CPR / 2) || delta < -(ENCODER_CPR / 2)) {
+		// at this point, current electrical angle can be treated as the offset
+		// if total_delta < 0, need to invert direction
+		// because encoder dir is opposite from electrical dir
+
+		calibration_offset = electrical_angle;
+
+		state = STATE_IDLE;
+		disable();
+
+		return;
+	}
+
 	if (count % CALIBRATION_DELAY == 0) {
-		uint16_t electrical_angle = count / CALIBRATION_DELAY;
-
-		// detect extreme delta as encoder wrap around
-		if (delta > (ENCODER_CPR / 2) || delta < -(ENCODER_CPR / 2)) {
-			// at this point, current electrical angle can be treated as the offset
-			// if total_delta < 0, need to invert direction
-			// because encoder dir is opposite from electrical dir
-
-			calibration_offset = electrical_angle;
-
-			state = STATE_IDLE;
-			disable();
-
-			return;
-		}
-
 		total_delta += delta;
 
 		prev_pos = pos;
