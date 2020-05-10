@@ -33,12 +33,11 @@ void Motor::setup(TIM_HandleTypeDef *_htim, GPIO_TypeDef *_pin_sleep_port, uint1
 	HAL_GPIO_WritePin(PHASE_EN_3_GPIO_Port, PHASE_EN_3_Pin, GPIO_PIN_SET);
 }
 
-char tx_data[] = "AAAA\r\n";
+char tx_data[] = "ABCDEF\r\n";
 uint16_t enc_spi_tx = 0xFFFF;
 uint16_t enc_spi_rx = 0;
 
 void Motor::loop(void) {
-
 	pos = enc_spi_rx & 0x3FFF;
 
 //	*((uint16_t *) tx_data) = pos;
@@ -60,34 +59,73 @@ void Motor::loop(void) {
 			break;
 		case STATE_IDLE:
 		default:
-			return;
+			break;
 	}
+
+	prev_pos = pos;
 }
 
 void Motor::loop_active(void) {
-	uint16_t corrected_pos = get_corrected_pos();
-
 	// scale corrected position into corresponding electrical angle
-	uint16_t base_angle = (float) (corrected_pos % encoder_ticks_per_cycle) / encoder_ticks_per_cycle * len_sinLUT;
+	uint16_t base_angle = (float) (get_corrected_pos() % encoder_ticks_per_cycle) * len_sinLUT / encoder_ticks_per_cycle;
+
+	int32_t pos_delta = get_pos_delta();
+	// scale up the delta to encoder ticks in one second
+	int32_t error = target_velocity - (pos_delta * UPDATE_FREQUENCY / LEN_POS_DELTAS);
+
+	int8_t direction = (error >= 0 ? 1 : -1) * (len_sinLUT / 4);
+
+	float power = KP_VEL * abs(error);
+
+	if (power > MAX_POWER) power = MAX_POWER;
+
+	*((int32_t *) tx_data) = error;
+	*((uint16_t *) &tx_data[4]) = pos_delta;
+	huart1.Instance->CR3 |= USART_CR3_DMAT;
+	HAL_DMA_Start_IT(&hdma_usart1_tx, (uint32_t) &tx_data, (uint32_t) &huart1.Instance->DR, 8);
 
 	for(uint8_t i = 0; i < 3; i++) {
-		int16_t angle = base_angle + 90 + (len_sinLUT * i / 3);
-		uint16_t power = get_sinLUT(angle) * 4;
+		int16_t angle = base_angle + direction + (len_sinLUT * i / 3);
+		uint16_t phase_power = get_sinLUT(angle) * power;
 
 		if (i == 0) {
-			htim->Instance->CCR1 = power;
+			htim->Instance->CCR1 = phase_power;
 		} else if (i == 1) {
-			htim->Instance->CCR2 = power;
+			htim->Instance->CCR2 = phase_power;
 		} else {
-			htim->Instance->CCR3 = power;
+			htim->Instance->CCR3 = phase_power;
 		}
-		//*(&(htim->Instance->CCR1) + 4 * i) = power;
 	}
+}
+
+int32_t Motor::get_pos_delta(void) {
+	// computes the sum of position deltas over the last LEN_POS_DELTAS * 1 / UPDATE_FREQUENCY
+
+	// assume at this point, encoder direction has been calibrated so that
+	// the encoder direction increases with electrical direction
+	int16_t delta = pos - prev_pos;
+
+	// if changes too much, assume that the encoder just wrapped around
+	// add/remove ENCODER_CPR to account for the change
+	if (delta < -(ENCODER_CPR / 2)) delta += ENCODER_CPR;
+	else if (delta > (ENCODER_CPR / 2)) delta -= ENCODER_CPR;
+
+	// add in new delta value
+	pos_delta_sum += delta;
+	// subtract oldest delta value
+	pos_delta_sum -= pos_deltas[pos_delta_head];
+
+	// save new delta value into oldest slot
+	pos_deltas[pos_delta_head] = delta;
+
+	pos_delta_head++;
+	if (pos_delta_head >= LEN_POS_DELTAS) pos_delta_head = 0;
+
+	return pos_delta_sum;
 }
 
 void Motor::loop_calibrate(void) {
 	static uint16_t count = 0;
-	static uint16_t prev_pos = 0;
 	static int16_t total_delta = 0;
 
 	int16_t delta = pos - prev_pos;
@@ -95,7 +133,6 @@ void Motor::loop_calibrate(void) {
 	if (state == STATE_START_CALIBRATE) {
 		count = 0;
 
-		prev_pos = pos;
 		total_delta = 0;
 		state = STATE_CALIBRATE;
 
@@ -122,11 +159,9 @@ void Motor::loop_calibrate(void) {
 	if (count % CALIBRATION_DELAY == 0) {
 		total_delta += delta;
 
-		prev_pos = pos;
-
 		for(uint8_t i = 0; i < 3; i++) {
 			uint16_t offset = electrical_angle + (len_sinLUT * i / 3);
-			uint16_t power = get_sinLUT(offset) * 4;
+			uint16_t power = get_sinLUT(offset) * 2;
 
 			if (i == 0) {
 				htim->Instance->CCR1 = power;
@@ -135,7 +170,6 @@ void Motor::loop_calibrate(void) {
 			} else {
 				htim->Instance->CCR3 = power;
 			}
-			//*(&(htim->Instance->CCR1) + 4 * i) = power;
 		}
 	}
 

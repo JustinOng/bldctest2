@@ -9,6 +9,7 @@
 #define SRC_APP_MOTOR_HPP_
 
 #include "main.h"
+#include "math.h"
 
 #define CS_RESISTANCE 4990
 // gain of the current sense amplifiers in the MP6540
@@ -18,9 +19,20 @@
 #define ENCODER_CPR 16384
 #define POLE_PAIRS 10
 
+#define KP_VEL ((float) 1.0/16384)
+#define MAX_POWER 4
+
 // when calibrating, how many update events before incrementing electrical angle
 // CALIBRATION_DELAY * len_sinLUT should not exceed 65535
-#define CALIBRATION_DELAY 16
+#define CALIBRATION_DELAY 32
+
+// number of motor update events per second
+// clk / (period * (1 + RCR))
+#define UPDATE_FREQUENCY (64000000 / (1024 * (1 + 3)))
+
+// track the last few position deltas to compute velocity
+// more accurately at low speed
+#define LEN_POS_DELTAS 16
 
 const uint16_t len_sinLUT = 256;
 const uint8_t sinLUT[len_sinLUT] = {127, 122, 117, 113, 108, 104, 99, 94, 90, 85, 81, 77, 72, 67, 63, 58, 54, 49, 45, 41, 38, 33, 31, 30, 28, 27, 26, 25, 24, 23, 22, 21, 21, 20, 19, 19, 18, 18, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 18, 18, 19, 19, 20, 20, 21, 22, 23, 23, 25, 25, 27, 28, 29, 30, 32, 30, 29, 28, 27, 25, 25, 23, 23, 22, 21, 20, 20, 19, 19, 18, 18, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 18, 18, 19, 19, 20, 21, 21, 22, 23, 24, 25, 26, 27, 28, 30, 31, 33, 38, 41, 45, 49, 54, 58, 63, 67, 72, 77, 81, 85, 90, 94, 99, 104, 108, 113, 117, 122, 126, 132, 136, 141, 145, 150, 155, 159, 164, 168, 173, 177, 182, 186, 190, 195, 199, 204, 208, 213, 216, 220, 223, 224, 225, 227, 228, 229, 230, 230, 232, 232, 233, 233, 234, 235, 235, 236, 236, 236, 236, 237, 237, 237, 237, 237, 236, 236, 236, 235, 235, 234, 234, 233, 233, 232,
@@ -63,11 +75,22 @@ class Motor {
 
 		float current[3] = {0};
 		uint16_t pos = 0;
+		uint16_t prev_pos = 0;
+
+		int16_t pos_deltas[LEN_POS_DELTAS] = {0};
+		int32_t pos_delta_sum = 0;
+		// next slot to write into in pos_delta
+		uint8_t pos_delta_head = 0;
+
+		int32_t get_pos_delta(void);
 
 		// calibration (under loop_calibrate) sets this
 		// commutation subtracts this offset from the encoder position
 		// to align encoder cycle start with electrical cycle start
-		uint16_t calibration_offset = 136;
+		uint16_t calibration_offset = 0;
+
+		// target velocity in encoder ticks per second
+		int32_t target_velocity = -16384*10;
 
 		static float current_from_adc(uint16_t adc) {
 			// formula from page 11, figure 2 of the mp6540 datasheet
